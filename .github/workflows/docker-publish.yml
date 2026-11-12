@@ -1,0 +1,47 @@
+name: Publicar imagen Docker
+
+# Flujo build -> run -> test -> push de la imagen de la API.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/jacoboolouro/tienda-online
+  VERSION: 1.0.0
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t "$IMAGE:$VERSION" -t "$IMAGE:latest" .
+
+      - name: Run
+        run: docker run -d --name tienda -p 8000:8000 "$IMAGE:$VERSION"
+
+      - name: Test
+        run: |
+          for i in $(seq 1 15); do
+            curl -fs http://localhost:8000/productos && break
+            sleep 1
+          done
+          curl -fs -X POST http://localhost:8000/usuarios -H "Content-Type: application/json" \
+            -d '{"nombre":"Laura","email":"laura@correo.com","tipo":"cliente","direccion_postal":"Calle Real 10"}'
+          curl -fs -X POST http://localhost:8000/productos -H "Content-Type: application/json" \
+            -d '{"tipo":"electronico","nombre":"Auriculares","precio":59.99,"stock":10,"meses_garantia":24}'
+          curl -fs -X POST http://localhost:8000/pedidos -H "Content-Type: application/json" \
+            -d '{"cliente_id":1,"items":[{"producto_id":1,"cantidad":2}]}' | grep '"total":119.98'
+
+      - name: Login en GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push
+        run: |
+          docker push "$IMAGE:$VERSION"
+          docker push "$IMAGE:latest"
