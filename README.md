@@ -147,8 +147,8 @@ el flujo **build → run → test → push**.
 Descargar y ejecutar la imagen publicada en cualquier máquina:
 
 ```bash
-docker pull ghcr.io/jacoboolouro/tienda-online:1.0.0
-docker run -d --name tienda -p 8000:8000 ghcr.io/jacoboolouro/tienda-online:1.0.0
+docker pull ghcr.io/jacoboolouro/jacobo-devops-practica:1.0.0
+docker run -d --name tienda -p 8000:8000 ghcr.io/jacoboolouro/jacobo-devops-practica:1.0.0
 ```
 
 Publicarla a mano (alternativa al workflow), con un token de GitHub con permiso
@@ -156,8 +156,8 @@ Publicarla a mano (alternativa al workflow), con un token de GitHub con permiso
 
 ```bash
 echo "$GHCR_TOKEN" | docker login ghcr.io -u jacoboolouro --password-stdin
-docker tag tienda-online:1.0.0 ghcr.io/jacoboolouro/tienda-online:1.0.0
-docker push ghcr.io/jacoboolouro/tienda-online:1.0.0
+docker tag tienda-online:1.0.0 ghcr.io/jacoboolouro/jacobo-devops-practica:1.0.0
+docker push ghcr.io/jacoboolouro/jacobo-devops-practica:1.0.0
 ```
 
 ## Flujo de trabajo Git
