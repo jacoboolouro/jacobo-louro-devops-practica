@@ -1,6 +1,10 @@
 # Práctica 3.2 - Imagen de la API de la Tienda Online (Práctica 2)
 FROM python:3.12-slim
 
+# Vincula la imagen publicada con este repositorio de GitHub
+LABEL org.opencontainers.image.source="https://github.com/jacoboolouro/jacobo-louro-devops-practica" \
+      org.opencontainers.image.description="API de la Tienda Online (Práctica 2)"
+
 # Evita ficheros .pyc y muestra los logs sin buffer
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
