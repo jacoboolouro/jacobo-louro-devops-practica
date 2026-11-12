@@ -27,3 +27,7 @@ tests/
 *.zip
 docker-compose*.yml
 Dockerfile*
+
+# Cliente y frontend: se ejecutan fuera del contenedor de la API
+cliente/
+frontend/
