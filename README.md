@@ -26,6 +26,7 @@ Este repositorio se usa para practicar control de versiones con Git/GitHub (rama
 ├── frontend/index.html     # Frontend web que consume la API
 ├── tests/                  # Pruebas unitarias (pytest)
 ├── requirements.txt        # Dependencias con versiones fijadas
+├── .github/workflows/      # Publicación automática de la imagen
 ├── Dockerfile
 ├── .dockerignore
 └── README.md
@@ -137,21 +138,26 @@ En los logs del contenedor (`docker logs tienda`) debe verse
 
 Los datos se guardan en memoria: al parar el contenedor se pierden.
 
-### 5. Publicar y descargar la imagen (Docker Hub)
+### 5. Publicar y descargar la imagen (GitHub Container Registry)
 
-Nombre de la imagen en Docker Hub: `jacoboolouro/tienda-online`
+La imagen se publica en el registry de GitHub (ghcr.io) de forma automática: el
+workflow `.github/workflows/docker-publish.yml` se ejecuta en cada push a `main` y sigue
+el flujo **build → run → test → push**.
+
+Descargar y ejecutar la imagen publicada en cualquier máquina:
 
 ```bash
-# Publicar
-docker login -u jacoboolouro
-docker tag tienda-online:1.0.0 jacoboolouro/tienda-online:1.0.0
-docker tag tienda-online:1.0.0 jacoboolouro/tienda-online:latest
-docker push jacoboolouro/tienda-online:1.0.0
-docker push jacoboolouro/tienda-online:latest
+docker pull ghcr.io/jacoboolouro/tienda-online:1.0.0
+docker run -d --name tienda -p 8000:8000 ghcr.io/jacoboolouro/tienda-online:1.0.0
+```
 
-# Descargar y ejecutar en cualquier otra máquina
-docker pull jacoboolouro/tienda-online:1.0.0
-docker run -d --name tienda -p 8000:8000 jacoboolouro/tienda-online:1.0.0
+Publicarla a mano (alternativa al workflow), con un token de GitHub con permiso
+`write:packages` guardado en la variable de entorno `GHCR_TOKEN`:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u jacoboolouro --password-stdin
+docker tag tienda-online:1.0.0 ghcr.io/jacoboolouro/tienda-online:1.0.0
+docker push ghcr.io/jacoboolouro/tienda-online:1.0.0
 ```
 
 ## Flujo de trabajo Git
