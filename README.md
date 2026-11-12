@@ -1,28 +1,51 @@
 # jacobo-devops-practica
 
-**Autor:** Jacobo (@jacoboolouro)
+**Autor:** Jacobo Louro Rodríguez-Volta
 
 ## Descripción
 
-Aplicación Python desarrollada en la Práctica 2: una **calculadora expuesta como API REST**
-(Flask). Recibe dos números y una operación (suma, resta, multiplicación, división o
-potencia) y devuelve el resultado en JSON. Este repositorio se usa para practicar control
-de versiones con Git/GitHub (ramas `feature/*`, commits y Pull Requests) y la
-contenerización con Docker.
+**Tienda Online**: aplicación Python desarrollada en la Práctica 2. Es una **API REST
+con FastAPI** que gestiona los usuarios (clientes y administradores), los productos
+(genéricos, electrónicos y de ropa) y los pedidos de una tienda, con los datos en memoria.
+Incluye un cliente HTTP de ejemplo (`cliente/cliente.py`) y un frontend web sencillo
+(`frontend/index.html`).
+
+Este repositorio se usa para practicar control de versiones con Git/GitHub (ramas
+`feature/*`, commits y Pull Requests) y la contenerización con Docker.
 
 ## Estructura del proyecto
 
 ```
 .
 ├── src/
-│   ├── app.py          # API Flask (endpoints /, /health, /calcular)
-│   └── calculos.py     # Lógica de la calculadora
-├── tests/              # Pruebas unitarias (pytest)
-├── requirements.txt    # Dependencias con versiones fijadas
+│   ├── main.py             # API FastAPI (endpoints de usuarios, productos y pedidos)
+│   ├── schemas.py          # Esquemas Pydantic de entrada y salida
+│   ├── models/             # Clases Usuario, Producto y Pedido
+│   └── Services/           # Lógica de negocio (TiendaService)
+├── cliente/cliente.py      # Cliente HTTP que prueba la API con requests
+├── frontend/index.html     # Frontend web que consume la API
+├── tests/                  # Pruebas unitarias (pytest)
+├── requirements.txt        # Dependencias con versiones fijadas
 ├── Dockerfile
 ├── .dockerignore
 └── README.md
 ```
+
+## Endpoints de la API
+
+| Método | Ruta                       | Descripción                      |
+|--------|----------------------------|----------------------------------|
+| POST   | `/usuarios`                | Registra un usuario              |
+| GET    | `/usuarios`                | Lista los usuarios               |
+| GET    | `/usuarios/{id}`           | Consulta un usuario              |
+| POST   | `/productos`               | Crea un producto                 |
+| GET    | `/productos`               | Lista los productos              |
+| GET    | `/productos/{id}`          | Consulta un producto             |
+| DELETE | `/productos/{id}`          | Elimina un producto              |
+| POST   | `/pedidos`                 | Crea un pedido                   |
+| GET    | `/usuarios/{id}/pedidos`   | Lista los pedidos de un cliente  |
+
+La documentación interactiva (Swagger) está en `/docs`.
 
 ## Ejecución sin Docker (opcional)
 
@@ -30,8 +53,12 @@ contenerización con Docker.
 python -m venv .venv
 source .venv/bin/activate        # En Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m src.app                # Arranca en http://localhost:5000
+cd src
+python main.py                   # Arranca en http://localhost:8000
 ```
+
+Con la API arrancada, en otra terminal: `python cliente/cliente.py`, o abrir
+`frontend/index.html` en el navegador.
 
 ## Docker
 
