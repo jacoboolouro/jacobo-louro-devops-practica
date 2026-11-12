@@ -67,8 +67,8 @@ Con la API arrancada, en otra terminal: `python cliente/cliente.py`, o abrir
 Desde la raíz del repositorio:
 
 ```bash
-docker build -t calculadora-devops:1.0.0 .
-docker tag calculadora-devops:1.0.0 calculadora-devops:latest
+docker build -t tienda-online:1.0.0 .
+docker tag tienda-online:1.0.0 tienda-online:latest
 ```
 
 La imagen se basa en `python:3.12-slim`, instala las dependencias de
@@ -79,65 +79,79 @@ entornos virtuales, cachés, tests y secretos (`.env`).
 ### 2. Ejecutar el contenedor
 
 ```bash
-# Ejecución básica: publica el puerto 5000 del contenedor en el 8080 del host
-docker run -d --name calculadora -p 8080:5000 calculadora-devops:1.0.0
+# Ejecución básica: la API queda en http://localhost:8000
+docker run -d --name tienda -p 8000:8000 tienda-online:1.0.0
 
-# Cambiando variables de entorno
-docker run -d --name calculadora -p 8080:8000 \
-  -e PORT=8000 -e APP_NAME=mi-calculadora \
-  calculadora-devops:1.0.0
+# Cambiando el puerto interno con una variable de entorno
+docker run -d --name tienda -p 8000:9000 -e PORT=9000 tienda-online:1.0.0
 
 # Ver logs y parar
-docker logs calculadora
-docker stop calculadora && docker rm calculadora
+docker logs tienda
+docker stop tienda && docker rm tienda
 ```
+
+Se publica en el puerto 8000 del host porque el cliente (`cliente/cliente.py`) y el
+frontend (`frontend/index.html`) llaman a `http://localhost:8000`.
 
 ### 3. Variables de entorno soportadas
 
-| Variable   | Valor por defecto     | Descripción                                  |
-|------------|-----------------------|----------------------------------------------|
-| `PORT`     | `5000`                | Puerto en el que escucha la API en el contenedor |
-| `APP_NAME` | `calculadora-devops`  | Nombre que devuelve el endpoint `/`          |
+| Variable | Valor por defecto | Descripción                                       |
+|----------|-------------------|---------------------------------------------------|
+| `PORT`   | `8000`            | Puerto en el que escucha la API dentro del contenedor |
 
 No se necesita ningún secreto. Si en el futuro hiciera falta, se pasaría con `-e` o
 `--env-file .env` (el `.env` está excluido de Git y de la imagen).
 
 ### 4. Pruebas y salida esperada
 
-Con el contenedor arrancado en el puerto 8080:
+Con el contenedor arrancado en el puerto 8000:
 
 ```bash
-curl http://localhost:8080/health
-# {"status":"ok"}
+# Crear un cliente
+curl -X POST http://localhost:8000/usuarios -H "Content-Type: application/json" \
+  -d '{"nombre":"Laura","email":"laura@correo.com","tipo":"cliente","direccion_postal":"Calle Real 10"}'
+# {"id":1,"nombre":"Laura","email":"laura@correo.com","es_admin":false}
 
-curl "http://localhost:8080/calcular?op=suma&a=2&b=3"
-# {"a":2.0,"b":3.0,"operacion":"suma","resultado":5.0}
+# Crear un producto
+curl -X POST http://localhost:8000/productos -H "Content-Type: application/json" \
+  -d '{"tipo":"electronico","nombre":"Auriculares","precio":59.99,"stock":10,"meses_garantia":24}'
+# {"id":1,"tipo":"electronico","nombre":"Auriculares","precio":59.99,"stock":10,"meses_garantia":24,"talla":null,"color":null}
 
-curl "http://localhost:8080/calcular?op=division&a=1&b=0"
-# {"error":"No se puede dividir entre cero"}   (HTTP 400)
+# Crear un pedido de 2 unidades
+curl -X POST http://localhost:8000/pedidos -H "Content-Type: application/json" \
+  -d '{"cliente_id":1,"items":[{"producto_id":1,"cantidad":2}]}'
+# {"id":1,"fecha":"...","cliente_id":1,"total":119.98,"items":[...]}
 
-curl http://localhost:8080/
-# {"app":"calculadora-devops","mensaje":"API de la calculadora. ...","operaciones":[...]}
+# Listar productos (el stock baja a 8)
+curl http://localhost:8000/productos
 ```
 
-Operaciones disponibles: `suma`, `resta`, `multiplicacion`, `division`, `potencia`.
-También se puede abrir en el navegador: http://localhost:8080/calcular?op=potencia&a=2&b=10
+Otras formas de probarlo:
 
-En los logs del contenedor (`docker logs calculadora`) debe verse el arranque de
-gunicorn: `Listening at: http://0.0.0.0:5000`.
+- Abrir http://localhost:8000/docs y usar la documentación interactiva (Swagger).
+- Ejecutar el cliente de ejemplo: `python cliente/cliente.py` (necesita `requests`).
+- Abrir `frontend/index.html` en el navegador.
+
+En los logs del contenedor (`docker logs tienda`) debe verse
+`Uvicorn running on http://0.0.0.0:8000`.
+
+Los datos se guardan en memoria: al parar el contenedor se pierden.
 
 ### 5. Publicar y descargar la imagen (Docker Hub)
 
-```bash
-docker login
-docker tag calculadora-devops:1.0.0 <usuario-dockerhub>/calculadora-devops:1.0.0
-docker tag calculadora-devops:1.0.0 <usuario-dockerhub>/calculadora-devops:latest
-docker push <usuario-dockerhub>/calculadora-devops:1.0.0
-docker push <usuario-dockerhub>/calculadora-devops:latest
+Nombre de la imagen en Docker Hub: `jacoboolouro/tienda-online`
 
-# En cualquier otra máquina
-docker pull <usuario-dockerhub>/calculadora-devops:1.0.0
-docker run -d -p 8080:5000 <usuario-dockerhub>/calculadora-devops:1.0.0
+```bash
+# Publicar
+docker login -u jacoboolouro
+docker tag tienda-online:1.0.0 jacoboolouro/tienda-online:1.0.0
+docker tag tienda-online:1.0.0 jacoboolouro/tienda-online:latest
+docker push jacoboolouro/tienda-online:1.0.0
+docker push jacoboolouro/tienda-online:latest
+
+# Descargar y ejecutar en cualquier otra máquina
+docker pull jacoboolouro/tienda-online:1.0.0
+docker run -d --name tienda -p 8000:8000 jacoboolouro/tienda-online:1.0.0
 ```
 
 ## Flujo de trabajo Git
@@ -145,3 +159,4 @@ docker run -d -p 8080:5000 <usuario-dockerhub>/calculadora-devops:1.0.0
 - `main`: rama principal y estable (protegida, solo se modifica mediante Pull Request).
 - `feature/docker`: contenerización de la aplicación (Práctica 3.2), fusionada en
   `main` mediante Pull Request.
+- `feature/tienda-online`: código de la Práctica 2, fusionada mediante Pull Request.

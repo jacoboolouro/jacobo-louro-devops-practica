@@ -1,11 +1,10 @@
-# Práctica 3.2 - Imagen de la calculadora (Práctica 2)
+# Práctica 3.2 - Imagen de la API de la Tienda Online (Práctica 2)
 FROM python:3.12-slim
 
 # Evita ficheros .pyc y muestra los logs sin buffer
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=5000 \
-    APP_NAME=calculadora-devops
+    PORT=8000
 
 WORKDIR /app
 
@@ -22,7 +21,10 @@ RUN useradd --create-home --uid 1000 appuser \
     && chmod -R u+rx /app/src
 USER appuser
 
-EXPOSE 5000
+# El código importa sus módulos (models, Services, schemas) desde src/
+WORKDIR /app/src
+
+EXPOSE 8000
 
 # 4) Comando de inicio
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 2 src.app:app"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
